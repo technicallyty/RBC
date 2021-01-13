@@ -30,7 +30,7 @@ message QueryAllPostsResponse {
 
 message QueryAllCommentsRequest {
     cosmos.base.query.v1beta1.PageRequest pagination = 1;
-    required string postID = 2;
+    string postID = 2;
 }
 
 message QueryAllCommentsResponse {
