@@ -38,10 +38,11 @@ TestAllComments
 
 My git history doesn't really tell the full approach so here's a better version
 
-1. Started with cli_test.go, and wrote the tests for a commenting service
-2. Moved over to the proto files and generated the proto files
-3. Implemented CreateComment, and AllComments query method in the msg_server and query_server respectively.
-4. Wrote the CLI commands in query.go & tx.go
+1. Started with the proto files to define commenting protobuf service
+2. wrote the tx and query methods
+3. implemented methods on msg_server and query_server
+4. Wrote tests for these methods
+5. 
 
 ## Known Issues
 The errors from msg_server don't actually propigate into the tests. 
