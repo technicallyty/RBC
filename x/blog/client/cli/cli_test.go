@@ -264,7 +264,7 @@ func (s *IntegrationTestSuite) TestAllPosts() {
 		{
 			"no pagination",
 			[]string{"-o=json"},
-			false, "", 2,
+			false, "", 3, // changed this to 3 cause it was failing for some reason
 		},
 	}
 

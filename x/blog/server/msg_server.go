@@ -45,7 +45,7 @@ func (s serverImpl) CreateComment(goCtx context.Context, request *blog.MsgCreate
 	id := uuid.New().String()
 
 	/*
-	* The below error doesn't propagate throughout the system
+	* The below error doesn't propagate throughout the system.
 	* Here, it is aware when a post doesn't exist,
 	* however, the error is not picked up by the test case.
 	* Not really sure where it ends up.
