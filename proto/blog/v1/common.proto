@@ -9,3 +9,10 @@ message Post {
   string title = 3;
   string body = 4;
 }
+
+message Comment {
+  string id = 1;
+  string author = 2;
+  string postID = 3;
+  string body = 4;
+}

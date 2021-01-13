@@ -28,6 +28,7 @@ func GetQueryCmd() *cobra.Command {
 	return cmd
 }
 
+// CmdAllPosts - appease linter TODO remove
 func CmdAllPosts() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list-post",
@@ -51,6 +52,53 @@ func CmdAllPosts() *cobra.Command {
 			}
 
 			res, err := queryClient.AllPosts(cmd.Context(), params)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintOutput(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	flags.AddPaginationFlagsToCmd(cmd, "blog")
+
+	return cmd
+}
+
+// CmdAllComments - query all comments on a given post
+func CmdAllComments() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "list-comment",
+		Short: "list all comments on a post",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			er := cmd.Flags().Set(flags.FlagFrom, args[0])
+			if er != nil {
+				return er
+			}
+			// the post's ID we are interested in getting comments from
+			argsPostID := string(args[1])
+
+			clientCtx := client.GetClientContextFromCmd(cmd)
+			clientCtx, err := client.ReadQueryCommandFlags(clientCtx, cmd.Flags())
+			if err != nil {
+				return err
+			}
+
+			pageReq, err := client.ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+
+			queryClient := blog.NewQueryClient(clientCtx)
+
+			params := &blog.QueryAllCommentsRequest{
+				Pagination: pageReq,
+				PostID:     argsPostID,
+			}
+
+			res, err := queryClient.AllComments(cmd.Context(), params)
 			if err != nil {
 				return err
 			}

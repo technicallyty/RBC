@@ -34,3 +34,27 @@ func (s serverImpl) CreatePost(goCtx context.Context, request *blog.MsgCreatePos
 
 	return &blog.MsgCreatePostResponse{Id: id}, nil
 }
+
+func (s serverImpl) CreateComment(goCtx context.Context, request *blog.MsgCreateCommentRequest) (*blog.MsgCreateCommentResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	store := prefix.NewStore(ctx.KVStore(s.storeKey), blog.KeyPrefix(blog.CommentKey))
+	id := uuid.New().String()
+
+	comment := blog.Comment{
+		Id:     id,
+		Author: request.Author,
+		PostID: request.PostID,
+		Body:   request.Body,
+	}
+
+	bz, err := s.cdc.MarshalBinaryBare(&comment)
+	if err != nil {
+		return nil, err
+	}
+
+	store.Set([]byte(id), bz)
+
+	return &blog.MsgCreateCommentResponse{Id: id}, nil
+
+}
