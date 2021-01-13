@@ -70,6 +70,7 @@ func (s *IntegrationTestSuite) TestCreateComment() {
 	err = val0.ClientCtx.JSONMarshaler.UnmarshalJSON(out.Bytes(), &res)
 	s.Require().NoError(err)
 
+	// Get the post ID
 	post := res.Posts
 	postid := post[0].Id
 
@@ -108,6 +109,7 @@ func (s *IntegrationTestSuite) TestCreateComment() {
 	}
 }
 
+// TestAllComments - creates a dummy post, gens 2 comments on it
 func (s *IntegrationTestSuite) TestAllComments() {
 	val0 := s.network.Validators[0]
 
