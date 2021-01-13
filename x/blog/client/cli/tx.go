@@ -67,7 +67,7 @@ func CmdCreatePost() *cobra.Command {
 	return cmd
 }
 
-// CmdCreateComment - cli command to create a comment on a given post id
+// CmdCreateComment - cli command to create a comment on a given post id.
 func CmdCreateComment() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-comment [author] [post-id] [body]",
