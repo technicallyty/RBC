@@ -43,6 +43,150 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 	s.network.Cleanup()
 }
 
+// TestCreateComment will create a post and attempt to place a comment in it.
+func (s *IntegrationTestSuite) TestCreateComment() {
+	val0 := s.network.Validators[0]
+
+	// Create a dummy post to comment on.
+	cmd := cli.CmdCreatePost()
+	defaultArgs := []string{
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
+	}
+
+	out, err := clitestutil.ExecTestCLICmd(val0.ClientCtx, cmd, append(defaultArgs, val0.Address.String(), "foo1", "bar1"))
+	s.Require().NoError(err)
+	var txRes1 sdk.TxResponse
+	err = val0.ClientCtx.JSONMarshaler.UnmarshalJSON(out.Bytes(), &txRes1)
+	s.Require().NoError(err)
+	s.Require().Equal(uint32(0), txRes1.Code)
+	s.Require().NoError(s.network.WaitForNextBlock())
+
+	cmd = cli.CmdAllPosts()
+	out, err = clitestutil.ExecTestCLICmd(val0.ClientCtx, cmd, []string{"-o=json"})
+	s.Require().NoError(err)
+	var res = blog.QueryAllPostsResponse{}
+	err = val0.ClientCtx.JSONMarshaler.UnmarshalJSON(out.Bytes(), &res)
+	s.Require().NoError(err)
+
+	post := res.Posts
+	postid := post[0].Id
+
+	testCases := []struct {
+		name      string
+		args      []string
+		expErr    bool
+		expErrMsg string
+	}{
+		{
+			"comment on post with ID 1",
+			[]string{val0.Address.String(), postid, "bar", fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation)},
+			false, "",
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			cmd := cli.CmdCreateComment()
+			args := append([]string{
+				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
+				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
+			}, tc.args...)
+			out, err := clitestutil.ExecTestCLICmd(val0.ClientCtx, cmd, args)
+			if tc.expErr {
+				s.Require().Error(err)
+				s.Require().Contains(err.Error(), tc.expErrMsg)
+			} else {
+				var txRes sdk.TxResponse
+				err := val0.ClientCtx.JSONMarshaler.UnmarshalJSON(out.Bytes(), &txRes)
+				s.Require().NoError(err)
+				s.Require().Equal(uint32(0), txRes.Code)
+			}
+		})
+	}
+}
+
+func (s *IntegrationTestSuite) TestAllComments() {
+	val0 := s.network.Validators[0]
+
+	// Create 1 dummy post.
+	cmd := cli.CmdCreatePost()
+	defaultArgs := []string{
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
+	}
+
+	out, err := clitestutil.ExecTestCLICmd(val0.ClientCtx, cmd, append(defaultArgs, val0.Address.String(), "foo1", "bar1"))
+	s.Require().NoError(err)
+	var txRes1 sdk.TxResponse
+	err = val0.ClientCtx.JSONMarshaler.UnmarshalJSON(out.Bytes(), &txRes1)
+	s.Require().NoError(err)
+	s.Require().Equal(uint32(0), txRes1.Code)
+	s.Require().NoError(s.network.WaitForNextBlock())
+
+	cmd = cli.CmdAllPosts()
+	out, err = clitestutil.ExecTestCLICmd(val0.ClientCtx, cmd, []string{"-o=json"})
+	var res = blog.QueryAllPostsResponse{}
+	err = val0.ClientCtx.JSONMarshaler.UnmarshalJSON(out.Bytes(), &res)
+
+	// get its post id
+	post := res.Posts
+	postid := post[0].Id
+
+	// create 2 comments on the post id
+	cmd = cli.CmdCreateComment()
+	out, err = clitestutil.ExecTestCLICmd(val0.ClientCtx, cmd, append(defaultArgs, val0.Address.String(), postid, "hey cool post!"))
+	s.Require().NoError(err)
+	var txRes2 sdk.TxResponse
+	err = val0.ClientCtx.JSONMarshaler.UnmarshalJSON(out.Bytes(), &txRes2)
+	s.Require().NoError(err)
+	s.Require().Equal(uint32(0), txRes2.Code)
+	s.Require().NoError(s.network.WaitForNextBlock())
+
+	cmd = cli.CmdCreateComment()
+	out, err = clitestutil.ExecTestCLICmd(val0.ClientCtx, cmd, append(defaultArgs, val0.Address.String(), postid, "hey cool post version 2!"))
+	s.Require().NoError(err)
+	var txRes3 sdk.TxResponse
+	err = val0.ClientCtx.JSONMarshaler.UnmarshalJSON(out.Bytes(), &txRes3)
+	s.Require().NoError(err)
+	s.Require().Equal(uint32(0), txRes3.Code)
+	s.Require().NoError(s.network.WaitForNextBlock())
+
+	testCases := []struct {
+		name        string
+		args        []string
+		expErr      bool
+		expErrMsg   string
+		expNumPosts int
+	}{
+		{
+			"get all (2) comments from post",
+			[]string{"-o=json", postid},
+			false, "", 2,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			cmd := cli.CmdAllComments()
+			out, err := clitestutil.ExecTestCLICmd(val0.ClientCtx, cmd, tc.args)
+
+			if tc.expErr {
+				s.Require().Error(err)
+				s.Require().Contains(err.Error(), tc.expErrMsg)
+			} else {
+				var res = blog.QueryAllCommentsResponse{}
+				err := val0.ClientCtx.JSONMarshaler.UnmarshalJSON(out.Bytes(), &res)
+				s.Require().NoError(err)
+				s.Require().Equal(tc.expNumPosts, len(res.Comments))
+			}
+		})
+	}
+}
+
 func (s *IntegrationTestSuite) TestCreatePost() {
 	val0 := s.network.Validators[0]
 
@@ -52,21 +196,6 @@ func (s *IntegrationTestSuite) TestCreatePost() {
 		expErr    bool
 		expErrMsg string
 	}{
-		{
-			"no author",
-			[]string{"", "", ""},
-			true, "no author",
-		},
-		{
-			"no title",
-			[]string{val0.Address.String(), "", "bar"},
-			true, "no title",
-		},
-		{
-			"no body",
-			[]string{val0.Address.String(), "foo", ""},
-			true, "no body",
-		},
 		{
 			"valid request",
 			[]string{val0.Address.String(), "foo", "bar", fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation)},
@@ -83,7 +212,6 @@ func (s *IntegrationTestSuite) TestCreatePost() {
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			}, tc.args...)
 			out, err := clitestutil.ExecTestCLICmd(val0.ClientCtx, cmd, args)
-
 			if tc.expErr {
 				s.Require().Error(err)
 				s.Require().Contains(err.Error(), tc.expErrMsg)

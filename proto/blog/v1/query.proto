@@ -24,17 +24,12 @@ message QueryAllPostsResponse {
 }
 
 
-
-
-// TODO the below may not be ready. 
+// decided to leave out pagination for simplicity sake
 
 message QueryAllCommentsRequest {
-    cosmos.base.query.v1beta1.PageRequest pagination = 1;
-    string postID = 2;
+  string postID = 1;
 }
 
 message QueryAllCommentsResponse {
   repeated Comment comments = 1;
-
-  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

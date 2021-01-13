@@ -11,6 +11,7 @@ import (
 var _ blog.QueryServer = serverImpl{}
 
 func (s serverImpl) AllPosts(goCtx context.Context, request *blog.QueryAllPostsRequest) (*blog.QueryAllPostsResponse, error) {
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	store := ctx.KVStore(s.storeKey)
@@ -34,6 +35,7 @@ func (s serverImpl) AllPosts(goCtx context.Context, request *blog.QueryAllPostsR
 	}, nil
 }
 
+// AllComments gets all comments on a given PostID.
 func (s serverImpl) AllComments(goCtx context.Context, request *blog.QueryAllCommentsRequest) (*blog.QueryAllCommentsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
@@ -50,7 +52,10 @@ func (s serverImpl) AllComments(goCtx context.Context, request *blog.QueryAllCom
 		if err != nil {
 			return nil, err
 		}
-		comments = append(comments, &msg)
+		// this is kinda hacky but im not too familiar with how KVStore works yet
+		if msg.PostID == request.PostID {
+			comments = append(comments, &msg)
+		}
 	}
 
 	return &blog.QueryAllCommentsResponse{

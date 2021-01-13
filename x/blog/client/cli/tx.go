@@ -26,7 +26,6 @@ func GetTxCmd() *cobra.Command {
 	return cmd
 }
 
-// CmdCreatePost - lint TODO remove comment
 func CmdCreatePost() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-post [author] [title] [body]",
@@ -68,8 +67,7 @@ func CmdCreatePost() *cobra.Command {
 	return cmd
 }
 
-// CmdCreateComment - Creates a comment on a post. Comments need to know what post is being commented on, the content, and who wrote it.
-// this is basically copied from the above.
+// CmdCreateComment - cli command to create a comment on a given post id
 func CmdCreateComment() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-comment [author] [post-id] [body]",
